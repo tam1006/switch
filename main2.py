@@ -11,6 +11,7 @@ import numpy as np
 import PIL
 import time
 import sys
+import os
 
 class Button(Serial):
     def __init__(self, pid):
@@ -26,13 +27,13 @@ class Button(Serial):
             signal = str(self.readline()) # second readline
             which_switch = re.findall(r'[0-9]',signal)
             if which_switch[0]== "1":
-                return "green"
+                return "green", u"良品"
             elif which_switch[0]== "3":
-                return "red"
+                return "red", u"不良品"
             elif which_switch[0]== "4":
-                return "black"
+                return "black", u"判別不能"
             else:
-                return ""
+                return "", ""
         else:
             return None
 
@@ -82,25 +83,29 @@ class CameraShot:
             pushed_color = self.button.check_button()
             if pushed_color is None:
                 pass
-            elif pushed_color == "":
+            elif pushed_color[0] == "":
                 print('\nFinish')
                 self.stop()
                 time.sleep(1)
                 break
             elif pushed_color is not None:
-                print(f"{pushed_color} is pushed")
+                print(f"{pushed_color[0]} is pushed")
                 frame = self.camera.shot()
-                self.save_image(pushed_color, frame)
-                self.gui.change_image(frame, pushed_color)
+                self.save_image(pushed_color[1], frame)
+                self.gui.change_image(frame, pushed_color[1])
                 time.sleep(1)
             
     # save image in each directory
     def save_image(self, color: str, frame: np.ndarray):
         save_dir = self.base_dir / color
+        # print(save_dir)
         save_dir.mkdir(parents=True, exist_ok=True)
+        # os.mkdir(save_dir)
         ts = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         save_path = save_dir / f"{ts}.png"
-        cv2.imwrite(str(save_path), frame)
+        print(save_path)
+        imwrite_ja(str(save_path), frame)
+        print(1)
 
     # start multithread
     def start(self):
@@ -224,6 +229,22 @@ class GUI:
     # Close button
     def stop(self):
         self.gui_finish_flag = True
+
+
+def imwrite_ja(filename, img, params=None):
+    try:
+        ext = os.path.splitext(filename)[1]
+        result, n = cv2.imencode(ext, img, params)
+
+        if result:
+            with open(filename, mode='w+b') as f:
+                n.tofile(f)
+            return True
+        else:
+            return False
+    except Exception as e:
+        print(e)
+        return False
 
 if __name__ == "__main__":
     pid = 29987
