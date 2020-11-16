@@ -15,7 +15,12 @@ import os
 
 class Button(Serial):
     def __init__(self, pid):
-        super().__init__(port=self._find_port_names(pid=pid)[0], baudrate=9600, timeout=0.5)
+        try:
+            super().__init__(port=self._find_port_names(pid=pid)[0], baudrate=9600, timeout=0.5)
+        except IndexError:
+            print('スイッチが接続されていません')
+            time.sleep(5)
+            sys.exit(1)
 
     # check what color of button is pushed
     def check_button(self):
@@ -50,7 +55,12 @@ class Button(Serial):
 
 class Camera:
     def __init__(self, camera_id):
-        self.cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
+        try:
+            self.cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
+        except AttributeError:
+            print('カメラが接続されていません')
+            time.sleep(5)
+            sys.exit(1)
 
     def get_size(self):
         return self.cap.read()[1].shape[0:2]
